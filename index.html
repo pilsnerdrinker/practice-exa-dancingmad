@@ -12,10 +12,11 @@
   --exa:#f0a030;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Yu Gothic","Meiryo",sans-serif;font-size:13px;min-height:100vh;padding:16px 0 24px}
-.app{width:min(1180px,calc(100% - 24px));margin:0 auto}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Yu Gothic","Meiryo",sans-serif;font-size:14px;min-height:100vh;padding:14px 0 22px}
+.app{width:min(1380px,calc(100% - 20px));margin:0 auto}
 .page-head{margin-bottom:10px}
 h1{font-size:clamp(24px,3.5vw,34px);font-weight:900;color:var(--text);letter-spacing:0;margin-bottom:4px}
+.head-links{display:flex;gap:8px;flex-wrap:wrap}
 .pill-link{display:inline-flex;align-items:center;min-height:36px;padding:7px 11px;border:1px solid var(--border);border-radius:8px;background:#171d27;color:#fff;text-decoration:none;font-weight:800;font-size:13px}
 .tabs{display:flex;gap:6px}
 .tab{padding:7px 16px;border-radius:8px;border:1px solid var(--border);background:#171d27;color:#d8cdbf;font-weight:800;font-size:13px;cursor:pointer}
@@ -31,20 +32,20 @@ button.toggle.active{background:#2c8d7d;color:#fff;border-color:#55c8b4}
 .speed-control input{width:92px;accent-color:var(--accent)}
 .speed-control span{min-width:30px;color:var(--text);text-align:right}
 .modebar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:#202632;border:1px solid var(--border);border-radius:8px 8px 0 0;padding:12px;margin-top:10px}
-.main{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:flex-start;background:#202632;border:1px solid var(--border);border-top:0;border-radius:0 0 8px 8px;padding:8px}
-.arena-wrap{position:relative;width:min(96vw,620px);flex:1 1 560px;max-width:620px;user-select:none;-webkit-user-select:none}
+.main{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;align-items:flex-start;background:#202632;border:1px solid var(--border);border-top:0;border-radius:0 0 8px 8px;padding:10px}
+.arena-wrap{position:relative;width:min(96vw,760px);flex:1 1 700px;max-width:760px;user-select:none;-webkit-user-select:none}
 svg{display:block;width:100%;height:auto;background:#111722;border-radius:8px;border:1px solid var(--border);touch-action:none;user-select:none;-webkit-user-select:none}
 svg text{user-select:none;-webkit-user-select:none;pointer-events:none}
-.side{width:min(100%,480px);display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.panel{min-width:0;background:#171d27;border:1px solid var(--border);border-radius:8px;padding:10px 12px}
-.panel .k{font-size:10px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
-.log{height:178px;overflow-y:auto;font-size:11px;line-height:1.45;display:flex;flex-direction:column-reverse;gap:2px}
+.side{width:min(100%,560px);display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.panel{min-width:0;background:#171d27;border:1px solid var(--border);border-radius:8px;padding:12px 14px}
+.panel .k{font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.log{height:240px;overflow-y:auto;font-size:12px;line-height:1.5;display:flex;flex-direction:column-reverse;gap:2px}
 .log .e{color:var(--muted);padding:2px 4px;border-radius:4px}
 .log .ok{color:#b6ffd6;background:rgba(61,214,140,.08)}
 .log .ng{color:#ffd1d6;background:rgba(247,95,110,.08)}
 .log .sys{color:#84d8ca}
-.bignum{font-size:28px;font-weight:900;line-height:1.05}
-.qtext{font-size:12px;line-height:1.6;min-height:52px}
+.bignum{font-size:34px;font-weight:900;line-height:1.05}
+.qtext{font-size:13px;line-height:1.6;min-height:58px}
 .count-overlay{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:72px;font-weight:900;color:#fff;text-shadow:0 0 30px rgba(143,211,255,.9);pointer-events:none;opacity:0;transition:opacity .15s}
 .count-overlay.show{opacity:1}
 .center-start{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);min-width:148px;min-height:54px;border-radius:10px;border:2px solid #55c8b4;background:rgba(44,141,125,.94);color:#fff;font-size:18px;font-weight:900;box-shadow:0 10px 28px rgba(0,0,0,.35);z-index:2}
@@ -79,7 +80,10 @@ svg text{user-select:none;-webkit-user-select:none;pointer-events:none}
 <div class="app">
 <div class="page-head">
   <h1>P5 エクサ練習（混沌の終末）</h1>
-  <a class="pill-link" href="https://pilsnerdrinker.github.io/raidshelf/" target="_blank" rel="noopener">他の練習ページ：raidshelf</a>
+  <div class="head-links">
+    <a class="pill-link" href="https://github.com/pilsnerdrinker/practice-exa-dancingmad#readme" target="_blank" rel="noopener">README</a>
+    <a class="pill-link" href="https://pilsnerdrinker.github.io/raidshelf/" target="_blank" rel="noopener">他の練習ページ：raidshelf</a>
+  </div>
 </div>
 
 <div class="modebar">
