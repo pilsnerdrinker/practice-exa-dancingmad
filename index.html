@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>P5 エクサ練習（混沌の終末）</title>
+<style>
+:root{
+  --bg:#151820;--card:#202632;--border:#46505f;
+  --text:#f1eadf;--muted:#b9ad9e;--accent:#45b49f;
+  --good:#3dd68c;--bad:#f75f6e;--warn:#f7c144;
+  --exa:#f0a030;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Yu Gothic","Meiryo",sans-serif;font-size:13px;min-height:100vh;padding:16px 0 24px}
+.app{width:min(1180px,calc(100% - 24px));margin:0 auto}
+.page-head{margin-bottom:10px}
+h1{font-size:clamp(24px,3.5vw,34px);font-weight:900;color:var(--text);letter-spacing:0;margin-bottom:4px}
+.pill-link{display:inline-flex;align-items:center;min-height:36px;padding:7px 11px;border:1px solid var(--border);border-radius:8px;background:#171d27;color:#fff;text-decoration:none;font-weight:800;font-size:13px}
+.tabs{display:flex;gap:6px}
+.tab{padding:7px 16px;border-radius:8px;border:1px solid var(--border);background:#171d27;color:#d8cdbf;font-weight:800;font-size:13px;cursor:pointer}
+.tab.active{border-color:#55c8b4;background:#2c8d7d;color:#fff;box-shadow:0 0 0 2px rgba(69,180,159,.22)}
+.ctrl{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;align-items:center}
+button{padding:8px 14px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text);font-weight:700;font-size:12px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:#2c8d7d;color:#fff;border-color:#36a08f;font-weight:900}
+button.ghost{color:var(--muted)}
+button.compact{padding:7px 10px}
+button.toggle.active{background:#2c8d7d;color:#fff;border-color:#55c8b4}
+.speed-control{display:inline-flex;align-items:center;gap:6px;padding:5px 8px;border:1px solid var(--border);border-radius:8px;background:#171d27;color:var(--muted);font-weight:800;font-size:11px}
+.speed-control input{width:92px;accent-color:var(--accent)}
+.speed-control span{min-width:30px;color:var(--text);text-align:right}
+.modebar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:#202632;border:1px solid var(--border);border-radius:8px 8px 0 0;padding:12px;margin-top:10px}
+.main{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:flex-start;background:#202632;border:1px solid var(--border);border-top:0;border-radius:0 0 8px 8px;padding:8px}
+.arena-wrap{position:relative;width:min(96vw,620px);flex:1 1 560px;max-width:620px;user-select:none;-webkit-user-select:none}
+svg{display:block;width:100%;height:auto;background:#111722;border-radius:8px;border:1px solid var(--border);touch-action:none;user-select:none;-webkit-user-select:none}
+svg text{user-select:none;-webkit-user-select:none;pointer-events:none}
+.side{width:min(100%,480px);display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.panel{min-width:0;background:#171d27;border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.panel .k{font-size:10px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+.log{height:178px;overflow-y:auto;font-size:11px;line-height:1.45;display:flex;flex-direction:column-reverse;gap:2px}
+.log .e{color:var(--muted);padding:2px 4px;border-radius:4px}
+.log .ok{color:#b6ffd6;background:rgba(61,214,140,.08)}
+.log .ng{color:#ffd1d6;background:rgba(247,95,110,.08)}
+.log .sys{color:#84d8ca}
+.bignum{font-size:28px;font-weight:900;line-height:1.05}
+.qtext{font-size:12px;line-height:1.6;min-height:52px}
+.count-overlay{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:72px;font-weight:900;color:#fff;text-shadow:0 0 30px rgba(143,211,255,.9);pointer-events:none;opacity:0;transition:opacity .15s}
+.count-overlay.show{opacity:1}
+.center-start{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);min-width:148px;min-height:54px;border-radius:10px;border:2px solid #55c8b4;background:rgba(44,141,125,.94);color:#fff;font-size:18px;font-weight:900;box-shadow:0 10px 28px rgba(0,0,0,.35);z-index:2}
+.center-start.hidden{display:none}
+.slide-nav{position:absolute;right:10px;top:10px;display:flex;align-items:center;gap:6px;z-index:3;background:rgba(23,29,39,.9);border:1px solid var(--border);border-radius:8px;padding:4px}
+.slide-nav.hidden{display:none}
+.slide-nav button{min-width:30px;min-height:28px;padding:2px 7px;border-radius:6px}
+.slide-nav span{min-width:68px;text-align:center;font-weight:900;color:#f1eadf}
+.hitflash{position:absolute;inset:0;border-radius:8px;background:rgba(247,95,110,.35);pointer-events:none;opacity:0}
+.hitflash.show{opacity:1;transition:none}
+.hitflash{transition:opacity .4s}
+.hidden{display:none!important}
+.tele-c{fill:rgba(240,160,48,.38);stroke:rgba(255,217,160,.9);stroke-width:.7}
+.tele-c.nextw{fill:rgba(240,160,48,.13);stroke:rgba(255,217,160,.45);stroke-dasharray:2 1.4}
+.pos-tele{fill:rgba(240,160,48,.30);stroke:rgba(255,217,160,.86);stroke-width:.6}
+.pos-tele-arrow{fill:none;stroke:#ffe2b8;stroke-width:.95;stroke-linecap:round;stroke-linejoin:round;opacity:.9}
+.trail-strip{display:none}
+.exa-c{fill:rgba(240,160,48,.48);stroke:#ffd9a0;stroke-width:.45}
+.exa-arrow{fill:none;stroke:#ffe2b8;stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round;opacity:.95}
+.gridline{stroke:rgba(255,255,255,.06);stroke-width:.3}
+.mk{font-size:4.2px;font-weight:900;fill:#fff;text-anchor:middle;dominant-baseline:middle;paint-order:stroke;stroke:#000;stroke-width:.5}
+.mk.abc{fill:#ff9a9a}
+.mk.num{fill:#9ad0ff}
+#playerDot{fill:#5ee0a0;stroke:#fff;stroke-width:.6}
+.qmark{stroke-width:.8;fill:none}
+.pos-band{fill:rgba(229,155,47,.34);stroke:rgba(255,217,160,.78);stroke-width:.45}
+.pos-band.next{fill:rgba(229,155,47,.12);stroke:rgba(255,217,160,.45);stroke-dasharray:2 1.4}
+.pos-label{font-size:4px;font-weight:900;fill:#f1eadf;text-anchor:middle;paint-order:stroke;stroke:#000;stroke-width:.45}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="page-head">
+  <h1>P5 エクサ練習（混沌の終末）</h1>
+  <a class="pill-link" href="https://pilsnerdrinker.github.io/raidshelf/" target="_blank" rel="noopener">他の練習ページ：raidshelf</a>
+</div>
+
+<div class="modebar">
+  <div class="tabs">
+    <div class="tab" id="tabQuiz" onclick="setMode('quiz')">位置確認</div>
+    <div class="tab active" id="tabRt" onclick="setMode('rt')">実践練習</div>
+  </div>
+  <div class="ctrl hidden" id="ctrlQuiz">
+    <button class="ghost" onclick="quizPrevProblem()">前の問題</button>
+    <button class="primary" onclick="quizNew()">新しい問題</button>
+    <button class="ghost toggle compact" id="stepBtn1" onclick="toggleStepMode()">一問ごと</button>
+    <button class="ghost compact" id="markerBtn1" onclick="toggleMarkerPreset()">2341</button>
+    <button class="ghost toggle compact" id="rotBtn1" onclick="toggleRot()">45度</button>
+  </div>
+  <div class="ctrl" id="ctrlRt">
+    <button class="primary" id="rtStartBtn" onclick="rtStart(false)">▶ スタート</button>
+    <button id="rtPauseBtn" onclick="rtTogglePause()">⏸ 一時停止</button>
+    <button onclick="rtStart(true)">同じ問題</button>
+    <button onclick="rtPrevProblem()">前の問題</button>
+    <button onclick="rtNewProblem()">新しい問題</button>
+    <button class="ghost toggle compact" id="stepBtn2" onclick="toggleStepMode()">一問ごと</button>
+    <label class="speed-control">速度
+      <input id="speedSlider" type="range" min="3.0" max="5.0" step="0.1" value="3.6" oninput="setExaSpeed(this.value)">
+      <span id="speedValue">3.6s</span>
+    </label>
+    <button class="ghost compact" id="markerBtn2" onclick="toggleMarkerPreset()">2341</button>
+    <button class="ghost toggle compact" id="rotBtn2" onclick="toggleRot()">45度</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="arena-wrap">
+    <svg id="svg" viewBox="-14 -14 128 128">
+      <defs>
+        <clipPath id="arenaClip"><circle cx="50" cy="50" r="48"/></clipPath>
+      </defs>
+      <g id="viewG">
+        <circle cx="50" cy="50" r="48" fill="#151d2e" stroke="#33435f" stroke-width="0.6"/>
+        <g clip-path="url(#arenaClip)" id="gridG"></g>
+        <g id="positionLayer"></g>
+        <!-- 北西→南東レーン群（-45回転） -->
+        <g><g id="gNW" transform="rotate(-45 50 50)"></g></g>
+        <!-- 北東→南西レーン群（+45回転） -->
+        <g><g id="gNE" transform="rotate(45 50 50)"></g></g>
+        <circle cx="50" cy="50" r="18" fill="none" stroke="rgba(255,120,120,.6)" stroke-width="0.5"/>
+        <g id="markersG"></g>
+        <g id="quizMarks"></g>
+        <circle id="playerDot" r="1.8" cx="50" cy="50"/>
+      </g>
+    </svg>
+    <div class="count-overlay" id="countOverlay"></div>
+    <button type="button" class="center-start" id="centerStartBtn" onclick="rtStart(false)">▶ スタート</button>
+    <div class="slide-nav hidden" id="slideNav">
+      <button type="button" onclick="movePositionSlide(-1)">＜</button>
+      <span id="slideNo">1/7</span>
+      <button type="button" onclick="movePositionSlide(1)">＞</button>
+    </div>
+    <div class="hitflash" id="hitFlash"></div>
+  </div>
+
+  <div class="side">
+    <div class="panel hidden" id="quizPanel">
+      <div class="k">スライド</div>
+      <div class="qtext" id="qText">1回目予兆</div>
+      <div style="display:flex;gap:14px;margin-top:6px">
+        <div><div class="k">表示</div><div class="bignum" id="qNum">1/7</div></div>
+      </div>
+    </div>
+    <div class="panel" id="rtPanel">
+      <div class="k">状況</div>
+      <div style="display:flex;gap:14px">
+        <div><div class="k">ウェーブ</div><div class="bignum" id="rtWave">-/6</div></div>
+        <div><div class="k">被弾</div><div class="bignum" style="color:var(--bad)" id="rtHits">0</div></div>
+      </div>
+      <p style="font-size:10px;color:var(--muted);margin-top:6px;line-height:1.6">
+        マウス/指の方向へキャラが移動します（移動速度制限あり）。<br><span id="speedHelp">予兆3.7s→発動3.6s。全6回。</span>
+      </p>
+    </div>
+    <div class="panel">
+      <div class="k">ログ</div>
+      <div class="log" id="logBox"></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+'use strict';
+// ================= 定数（調整はここ） =================
+const LANES = 5;                 // 各方向のレーン数
+const FIELD_R = 48;
+const CX=50, CY=50;
+const LANE_W = (FIELD_R*2)/LANES;   // 19.2
+const EXA_R = LANE_W*0.55;          // エクサ円の半径
+const EXA_STEPS = 7;                // 1レーン内で順番に発動する回数
+const TELEGRAPH_MS = 3700;          // 予兆時間
+const TELEGRAPH_BLINKS = 3;         // 予兆矢印の表示回数
+let TRAVEL_MS   = 3600;             // 1〜7個目の発動にかかる時間
+const WAVE_INTERVAL = TELEGRAPH_MS * 2 / 3; // 3回目表示と次予兆1回目を合わせる
+const COUNT_MS = 3000;              // 3カウント
+const PLAYER_SPEED = 0.020;         // units/ms（移動速度）
+// パターン: 1レーン空きのペア
+const PATTERNS = { L:[0,2], C:[1,3], R:[2,4] };
+const PAT_LABEL = { L:'左', C:'中', R:'右' };
+
+// ================= 共通状態 =================
+let mode='rt';
+let viewRot=0;   // 0=通常表示 45=右45度 -45=左45度
+let nextRot=45;
+let markerPreset='2341';
+let waves=[];    // [{dir:'NW'|'NE', pat:'L'|'C'|'R'}] ×6
+let positionSlide=0;
+let oneByOne=false;
+let problemHistory=[];
+let problemIndex=-1;
+let quizAdvanceTimer=null;
+
+const svg=document.getElementById('svg');
+const gNW=document.getElementById('gNW');
+const gNE=document.getElementById('gNE');
+const viewG=document.getElementById('viewG');
+const quizMarks=document.getElementById('quizMarks');
+const playerDot=document.getElementById('playerDot');
+const centerStartBtn=document.getElementById('centerStartBtn');
+const positionLayer=document.getElementById('positionLayer');
+const slideNav=document.getElementById('slideNav');
+const slideNo=document.getElementById('slideNo');
+
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+function genWaves(){
+  const nw=shuffle(['L','C','R']), ne=shuffle(['L','C','R']);
+  const w=[];
+  for(let i=0;i<3;i++){ w.push({dir:'NW',pat:nw[i]}); w.push({dir:'NE',pat:ne[i]}); }
+  return w;
+}
+function copyWaves(src){ return src.map(w=>({dir:w.dir,pat:w.pat})); }
+function commitProblem(nextWaves){
+  waves=copyWaves(nextWaves);
+  if(problemIndex<problemHistory.length-1) problemHistory=problemHistory.slice(0,problemIndex+1);
+  problemHistory.push(copyWaves(waves));
+  problemIndex=problemHistory.length-1;
+}
+function ensureProblem(){
+  if(waves.length===0) commitProblem(genWaves());
+  else if(problemHistory.length===0){ problemHistory=[copyWaves(waves)]; problemIndex=0; }
+}
+function loadProblemAt(index,slide){
+  if(index<0||index>=problemHistory.length)return false;
+  problemIndex=index;
+  waves=copyWaves(problemHistory[problemIndex]);
+  positionSlide=slide;
+  renderPositionSlide();
+  log(`位置確認：${problemIndex+1}問目`,'sys');
+  return true;
+}
+function loadPrevProblem(slide){
+  const target=problemIndex-1;
+  if(target<0){
+    log('前の問題はありません','sys');
+    return false;
+  }
+  return loadProblemAt(target,slide);
+}
+function positionNextProblem(){
+  commitProblem(genWaves());
+  positionSlide=0;
+  renderPositionSlide();
+  log(`位置確認：${problemIndex+1}問目`,'sys');
+}
+function laneX(lane){ return CX + (lane-(LANES-1)/2)*LANE_W; }
+function rotPt(x,y,deg){
+  const r=deg*Math.PI/180, c=Math.cos(r), s=Math.sin(r);
+  const dx=x-CX, dy=y-CY;
+  return { x: CX + dx*c - dy*s, y: CY + dx*s + dy*c };
+}
+// world座標 → 各方向レーンのローカル座標
+function toLocal(pt,dir){ return rotPt(pt.x,pt.y, dir==='NW'?45:-45); }
+function inLaneStrip(pt,dir,lane){
+  const l=toLocal(pt,dir);
+  return Math.abs(l.x-laneX(lane)) <= LANE_W/2;
+}
+function inWaveStrips(pt,w){ return PATTERNS[w.pat].some(l=>inLaneStrip(pt,w.dir,l)); }
+
+// ================= 描画（グリッド・マーカー） =================
+(function initStatic(){
+  const grid=document.getElementById('gridG');
+  let s='';
+  for(let i=1;i<10;i++){
+    const p=2+i*9.6;
+    s+=`<line class="gridline" x1="${p}" y1="2" x2="${p}" y2="98"/>`;
+    s+=`<line class="gridline" x1="2" y1="${p}" x2="98" y2="${p}"/>`;
+  }
+  grid.innerHTML=s;
+  renderMarkers();
+})();
+
+function renderMarkers(){
+  // フィールドマーカー A(北)B(東)C(南)D(西)、数字は 1234 / 2341 切替
+  const mk=document.getElementById('markersG');
+  const R=44;
+  const nums = markerPreset === '2341' ? ['2','3','4','1'] : ['1','2','3','4'];
+  const items=[
+    ['A',0,'abc'],['B',90,'abc'],['C',180,'abc'],['D',270,'abc'],
+    [nums[0],45,'num'],[nums[1],135,'num'],[nums[2],225,'num'],[nums[3],315,'num'],
+  ];
+  mk.innerHTML=items.map(([t,deg,cls])=>{
+    const rad=(deg-90)*Math.PI/180;
+    const x=CX+R*Math.cos(rad), y=CY+R*Math.sin(rad);
+    return `<text class="mk ${cls}" x="${x}" y="${y}">${t}</text>`;
+  }).join('');
+}
+
+function toggleMarkerPreset(){
+  markerPreset = markerPreset === '1234' ? '2341' : '1234';
+  renderMarkers();
+  document.getElementById('markerBtn1').textContent=markerPreset;
+  document.getElementById('markerBtn2').textContent=markerPreset;
+}
+
+function toggleRot(){
+  if(viewRot===0){
+    viewRot=nextRot;
+  }else{
+    nextRot=viewRot===45 ? -45 : 45;
+    viewRot=0;
+  }
+  viewG.setAttribute('transform', viewRot? `rotate(${viewRot} 50 50)` : '');
+  updateRotButtons();
+}
+
+function updateRotButtons(){
+  const label=viewRot===45 ? '右45' : viewRot===-45 ? '左45' : '45度';
+  ['rotBtn1','rotBtn2'].forEach(id=>{
+    const btn=document.getElementById(id);
+    btn.textContent=label;
+    btn.classList.toggle('active',viewRot!==0);
+    btn.setAttribute('aria-pressed',String(viewRot!==0));
+  });
+}
+
+function updateFlowButtons(){
+  ['stepBtn1','stepBtn2'].forEach(id=>{
+    const btn=document.getElementById(id);
+    btn.classList.toggle('active',oneByOne);
+    btn.setAttribute('aria-pressed',String(oneByOne));
+  });
+}
+
+function updateSpeedDisplay(){
+  const sec=(TRAVEL_MS/1000).toFixed(1);
+  document.getElementById('speedSlider').value=sec;
+  document.getElementById('speedValue').textContent=`${sec}s`;
+  document.getElementById('speedHelp').textContent=`予兆3.7s→発動${sec}s。全6回。`;
+}
+
+function setExaSpeed(value){
+  TRAVEL_MS=Math.round(Number(value)*1000);
+  updateSpeedDisplay();
+}
+window.setExaSpeed=setExaSpeed;
+
+function toggleStepMode(){
+  oneByOne=!oneByOne;
+  if(quizAdvanceTimer){ clearTimeout(quizAdvanceTimer); quizAdvanceTimer=null; }
+  updateFlowButtons();
+  log(oneByOne?'一問ごとモード':'連続モード','sys');
+}
+window.toggleStepMode=toggleStepMode;
+
+// SVGクリック座標 → world座標
+function evtToWorld(e){
+  const pt=svg.createSVGPoint();
+  pt.x=e.clientX; pt.y=e.clientY;
+  const sp=pt.matrixTransform(svg.getScreenCTM().inverse());
+  // viewの回転を打ち消す
+  return rotPt(sp.x, sp.y, -viewRot);
+}
+
+// ================= ウェーブ描画要素 =================
+function exaStepY(step){
+  const y0=-EXA_R*0.35;
+  const y1=100+EXA_R*0.35;
+  return y0+(y1-y0)*(step/(EXA_STEPS-1));
+}
+
+// 各waveにつき: 外周予兆円×2, 矢印×2, エクサ円グループ
+function buildWaveEls(){
+  gNW.innerHTML=''; gNE.innerHTML='';
+  waves.forEach((w,k)=>{
+    const g = w.dir==='NW' ? gNW : gNE;
+    const lanes=PATTERNS[w.pat];
+    const wrap=document.createElementNS('http://www.w3.org/2000/svg','g');
+    wrap.setAttribute('id',`wave${k}`);
+    let html='';
+    lanes.forEach(l=>{
+      const x=laneX(l)-LANE_W/2;
+      html+=`<rect class="trail-strip hidden" data-role="trail" x="${x}" y="-12" width="${LANE_W}" height="124"/>`;
+      html+=`<circle class="tele-c hidden" data-role="tele" cx="${laneX(l)}" cy="${-EXA_R*0.35}" r="${EXA_R}"/>`;
+      // 進行方向矢印（丸の中で下方向へ点滅）
+      const ax=laneX(l);
+      html+=`<g class="exa-arrow hidden" data-role="arrow">
+        <path d="M ${ax-4} ${-EXA_R*0.65} L ${ax} ${-EXA_R*0.25} L ${ax+4} ${-EXA_R*0.65}"/>
+        <path d="M ${ax-4} ${-EXA_R*0.15} L ${ax} ${EXA_R*0.25} L ${ax+4} ${-EXA_R*0.15}"/>
+      </g>`;
+      // エクサ円列
+      html+=`<g data-role="circles" class="hidden">`+
+        Array.from({length:EXA_STEPS},(_,i)=>`<circle class="exa-c hidden" data-c="${i}" cx="${ax}" cy="${exaStepY(i)}" r="${EXA_R}"/>`).join('')+
+      `</g>`;
+    });
+    wrap.innerHTML=html;
+    g.appendChild(wrap);
+  });
+}
+function waveEls(k){ return document.getElementById(`wave${k}`); }
+function setWaveVisual(k,state,progress=null){
+  // state: 'pre'|'tele'|'travel'|'done'  progress:0-1(実践時)
+  const wrap=waveEls(k); if(!wrap)return;
+  const blinkIndex = progress === null ? 0 : Math.floor(Math.min(progress,0.999)*TELEGRAPH_BLINKS);
+  const blinkPhase = progress === null ? 0 : Math.min(progress,0.999)*TELEGRAPH_BLINKS-blinkIndex;
+  const blinkOn = progress === null || blinkPhase < 0.52;
+  wrap.querySelectorAll('[data-role="tele"]').forEach(el=>el.classList.toggle('hidden', state!=='tele'));
+  wrap.querySelectorAll('[data-role="arrow"]').forEach(el=>el.classList.toggle('hidden', !(state==='tele' && blinkOn)));
+  wrap.querySelectorAll('[data-role="trail"]').forEach(el=>el.classList.add('hidden'));
+  wrap.querySelectorAll('[data-role="circles"]').forEach(el=>{
+    el.classList.toggle('hidden', state!=='travel');
+    if(state==='travel'){
+      const unit=Math.min(progress,0.999)*EXA_STEPS;
+      const active=Math.min(EXA_STEPS-1,Math.floor(unit));
+      const phase=unit-active;
+      const pulse=1-phase;
+      el.querySelectorAll('circle').forEach((c,i)=>{
+        const lingering=i===active-1 && phase<0.32;
+        c.classList.toggle('hidden', !(i===active || lingering));
+        const opacity=i===active ? 0.55+0.35*pulse : 0.28*(1-phase/0.32);
+        c.setAttribute('opacity', String(Math.max(0.08,opacity)));
+      });
+    }else{
+      el.querySelectorAll('circle').forEach(c=>c.classList.add('hidden'));
+    }
+  });
+}
+// クイズ用: 次の予兆を薄く表示
+function setNextPreview(k,on){
+  const wrap=waveEls(k); if(!wrap)return;
+  wrap.querySelectorAll('[data-role="tele"]').forEach(el=>{
+    el.classList.toggle('hidden', !on);
+    el.classList.toggle('nextw', on);
+  });
+}
+function clearNextPreview(k){
+  const wrap=waveEls(k); if(!wrap)return;
+  wrap.querySelectorAll('[data-role="tele"]').forEach(el=>{
+    el.classList.add('hidden');
+    el.classList.remove('nextw');
+  });
+}
+
+// ================= ログ =================
+function log(text,cls='e'){
+  const box=document.getElementById('logBox');
+  const el=document.createElement('div');
+  el.className=`e ${cls}`;
+  el.textContent=text;
+  box.prepend(el);
+  while(box.children.length>80)box.removeChild(box.lastChild);
+}
+
+function updateCenterStart(){
+  centerStartBtn.classList.toggle('hidden', !(mode==='rt' && !rt.running && !rt.finished));
+}
+
+function clearRuntimeVisuals(){
+  gNW.innerHTML='';
+  gNE.innerHTML='';
+  quizMarks.innerHTML='';
+}
+
+function positionWaveLabel(index){
+  const w=waves[index];
+  if(!w) return '';
+  return `${index+1}回目：${w.dir==='NW'?'北西':'北東'} ${PAT_LABEL[w.pat]}`;
+}
+
+function positionTelegraphHtml(w){
+  if(!w) return '';
+  const lanes=PATTERNS[w.pat];
+  const rot=w.dir==='NW' ? -45 : 45;
+  const y=-EXA_R*0.25;
+  let html=`<g transform="rotate(${rot} 50 50)">`;
+  lanes.forEach(l=>{
+    const ax=laneX(l);
+    html+=`<circle class="pos-tele" cx="${ax}" cy="${y}" r="${EXA_R}"/>`;
+    html+=`<g class="pos-tele-arrow">
+      <path d="M ${ax-4} ${y-EXA_R*0.35} L ${ax} ${y+EXA_R*0.05} L ${ax+4} ${y-EXA_R*0.35}"/>
+      <path d="M ${ax-4} ${y+EXA_R*0.15} L ${ax} ${y+EXA_R*0.55} L ${ax+4} ${y+EXA_R*0.15}"/>
+    </g>`;
+  });
+  html+=`</g>`;
+  return html;
+}
+
+function positionBandHtml(w,index,kind){
+  if(!w) return '';
+  const lanes=PATTERNS[w.pat];
+  const rot=w.dir==='NW' ? -45 : 45;
+  const cls=kind==='next' ? 'pos-band next' : 'pos-band';
+  const y=-12;
+  let html=`<g clip-path="url(#arenaClip)" transform="rotate(${rot} 50 50)">`;
+  lanes.forEach(l=>{
+    const x=laneX(l)-LANE_W/2;
+    html+=`<rect class="${cls}" x="${x}" y="${y}" width="${LANE_W}" height="124"/>`;
+  });
+  html+=`</g>`;
+  const labelY=kind==='next' ? 10 : 92;
+  html+=`<text class="pos-label" x="50" y="${labelY}">${kind==='next'?'予兆':'直線'}：${positionWaveLabel(index)}</text>`;
+  return html;
+}
+
+function getPositionSlides(){
+  ensureProblem();
+  return [
+    { text:'1枚目：1回目予兆', danger:[], html:positionBandHtml(waves[0],0,'next')+positionTelegraphHtml(waves[0]) },
+    { text:'2枚目：1回目レーンの直線と2回目予兆', danger:[0], html:positionBandHtml(waves[0],0,'current')+positionBandHtml(waves[1],1,'next')+positionTelegraphHtml(waves[1]) },
+    { text:'3枚目：2回目レーンの直線と3回目予兆', danger:[1], html:positionBandHtml(waves[1],1,'current')+positionBandHtml(waves[2],2,'next')+positionTelegraphHtml(waves[2]) },
+    { text:'4枚目：3回目レーンの直線と4回目予兆', danger:[2], html:positionBandHtml(waves[2],2,'current')+positionBandHtml(waves[3],3,'next')+positionTelegraphHtml(waves[3]) },
+    { text:'5枚目：4回目レーンの直線と5回目予兆', danger:[3], html:positionBandHtml(waves[3],3,'current')+positionBandHtml(waves[4],4,'next')+positionTelegraphHtml(waves[4]) },
+    { text:'6枚目：5回目レーンの直線と6回目予兆', danger:[4], html:positionBandHtml(waves[4],4,'current')+positionBandHtml(waves[5],5,'next')+positionTelegraphHtml(waves[5]) },
+    { text:'7枚目：6回目レーンの直線', danger:[5], html:positionBandHtml(waves[5],5,'current') }
+  ];
+}
+
+function renderPositionSlide(){
+  clearRuntimeVisuals();
+  const slides=getPositionSlides();
+  if(positionSlide>=slides.length) positionSlide=slides.length-1;
+  const slide=slides[positionSlide];
+  positionLayer.innerHTML=slide.html;
+  document.getElementById('qText').textContent=slide.text;
+  document.getElementById('qNum').textContent=`${positionSlide+1}/${slides.length}`;
+  slideNo.textContent=`${positionSlide+1}/${slides.length}`;
+}
+
+function movePositionSlide(delta){
+  if(quizAdvanceTimer){ clearTimeout(quizAdvanceTimer); quizAdvanceTimer=null; }
+  const len=getPositionSlides().length;
+  if(delta<0&&positionSlide===0){
+    loadPrevProblem(len-1);
+    return;
+  }
+  if(delta>0&&positionSlide===len-1){
+    positionNextProblem();
+    return;
+  }
+  positionSlide=(positionSlide+delta+len)%len;
+  renderPositionSlide();
+}
+window.movePositionSlide=movePositionSlide;
+
+// ================= モード切替 =================
+function setMode(m){
+  mode=m;
+  rtStop();
+  if(m!=='quiz'&&quizAdvanceTimer){ clearTimeout(quizAdvanceTimer); quizAdvanceTimer=null; }
+  document.getElementById('tabQuiz').classList.toggle('active',m==='quiz');
+  document.getElementById('tabRt').classList.toggle('active',m==='rt');
+  document.getElementById('ctrlQuiz').classList.toggle('hidden',m!=='quiz');
+  document.getElementById('ctrlRt').classList.toggle('hidden',m!=='rt');
+  document.getElementById('quizPanel').classList.toggle('hidden',m!=='quiz');
+  document.getElementById('rtPanel').classList.toggle('hidden',m!=='rt');
+  playerDot.classList.toggle('hidden',m!=='rt');
+  slideNav.classList.toggle('hidden',m!=='quiz');
+  ensureProblem();
+  if(m==='quiz'){
+    positionSlide=0;
+    renderPositionSlide();
+  }else{
+    positionLayer.innerHTML='';
+    buildWaveEls();
+  }
+  updateCenterStart();
+}
+window.setMode=setMode;
+
+// ================= 安地クイズ =================
+const quiz={ idx:-1, ok:0, done:false };
+function quizNew(){ commitProblem(genWaves()); positionSlide=0; renderPositionSlide(); log(`位置確認：${problemIndex+1}問目`,'sys'); }
+function quizPrevProblem(){ loadPrevProblem(0); }
+function quizRetry(){ renderPositionSlide(); }
+window.quizNew=quizNew; window.quizPrevProblem=quizPrevProblem; window.quizRetry=quizRetry;
+
+function quizRenderIdle(){
+  renderPositionSlide();
+}
+function quizRenderQ(){
+  renderPositionSlide();
+}
+function quizClick(pt){
+  if(Math.hypot(pt.x-CX,pt.y-CY)>FIELD_R-1)return;
+  const slide=getPositionSlides()[positionSlide];
+  const hit=slide.danger.some(i=>inWaveStrips(pt,waves[i]));
+  const color=hit?'#f75f6e':'#3dd68c';
+  quizMarks.innerHTML+=`<circle class="qmark" cx="${pt.x}" cy="${pt.y}" r="2.6" stroke="${color}"/>`;
+  if(hit) log(`${positionSlide+1}枚目 ✘ 危険範囲`,'ng');
+  else{
+    log(`${positionSlide+1}枚目 ✔ 安地OK`,'ok');
+    if(!oneByOne){
+      if(quizAdvanceTimer)clearTimeout(quizAdvanceTimer);
+      quizAdvanceTimer=setTimeout(()=>{ quizAdvanceTimer=null; movePositionSlide(1); },650);
+    }
+  }
+}
+
+// ================= リアルタイム回避 =================
+const rt={
+  running:false, paused:false, timer:null,
+  autoTimer:null,
+  startTime:0, pausedAt:0,
+  player:{x:50,y:50}, target:{x:50,y:50},
+  hits:0, waveHitFlags:[], finished:false,
+};
+function rtNow(){ return performance.now(); }
+function clearRtAuto(){
+  if(rt.autoTimer){ clearTimeout(rt.autoTimer); rt.autoTimer=null; }
+}
+function rtStart(same){
+  clearRtAuto();
+  rtStop();
+  if(!same||waves.length===0) commitProblem(genWaves());
+  else ensureProblem();
+  buildWaveEls();
+  quizMarks.innerHTML='';
+  rt.running=true; rt.paused=false; rt.finished=false;
+  rt.hits=0; rt.waveHitFlags=waves.map(()=>false);
+  rt.player={x:50,y:50}; rt.target={x:50,y:50};
+  playerDot.setAttribute('cx',rt.player.x);
+  playerDot.setAttribute('cy',rt.player.y);
+  rt.startTime=rtNow();
+  document.getElementById('rtHits').textContent='0';
+  document.getElementById('rtWave').textContent='-/6';
+  updateCenterStart();
+  log('実践練習開始','sys');
+  rt.timer=setInterval(rtTick,16);
+}
+function rtStop(){
+  if(rt.timer){clearInterval(rt.timer);rt.timer=null;}
+  clearRtAuto();
+  rt.running=false; rt.paused=false;
+  document.getElementById('countOverlay').classList.remove('show');
+  updateCenterStart();
+}
+function rtTogglePause(){
+  if(!rt.running)return;
+  if(!rt.paused){
+    rt.paused=true; rt.pausedAt=rtNow();
+    clearInterval(rt.timer); rt.timer=null;
+    document.getElementById('rtPauseBtn').textContent='▶ 再開';
+  }else{
+    rt.startTime += rtNow()-rt.pausedAt;
+    rt.paused=false;
+    document.getElementById('rtPauseBtn').textContent='⏸ 一時停止';
+    rt.timer=setInterval(rtTick,16);
+  }
+}
+function rtNewProblem(){ commitProblem(genWaves()); rtStart(true); }
+function rtPrevProblem(){
+  const target=problemIndex-1;
+  if(target<0){
+    log('前の問題はありません','sys');
+    return;
+  }
+  problemIndex=target;
+  waves=copyWaves(problemHistory[problemIndex]);
+  log(`実践練習：${problemIndex+1}問目`,'sys');
+  rtStart(true);
+}
+window.rtStart=rtStart; window.rtTogglePause=rtTogglePause; window.rtNewProblem=rtNewProblem; window.rtPrevProblem=rtPrevProblem;
+
+function rtTick(){
+  const t=rtNow()-rt.startTime;
+  const co=document.getElementById('countOverlay');
+  if(t<COUNT_MS){
+    co.classList.add('show');
+    co.textContent=Math.ceil((COUNT_MS-t)/1000);
+  }else{
+    co.classList.remove('show');
+  }
+  // プレイヤー移動（速度制限つきでターゲットへ）
+  const dt=16;
+  const dx=rt.target.x-rt.player.x, dy=rt.target.y-rt.player.y;
+  const dist=Math.hypot(dx,dy);
+  if(dist>0.1){
+    const step=Math.min(dist,PLAYER_SPEED*dt);
+    rt.player.x+=dx/dist*step;
+    rt.player.y+=dy/dist*step;
+  }
+  // アリーナ内にクランプ
+  const pr=Math.hypot(rt.player.x-CX,rt.player.y-CY);
+  const maxR=FIELD_R-2;
+  if(pr>maxR){
+    rt.player.x=CX+(rt.player.x-CX)/pr*maxR;
+    rt.player.y=CY+(rt.player.y-CY)/pr*maxR;
+  }
+  playerDot.setAttribute('cx',rt.player.x);
+  playerDot.setAttribute('cy',rt.player.y);
+
+  // ウェーブ状態
+  let curWave='-';
+  waves.forEach((w,k)=>{
+    const tk=COUNT_MS+k*WAVE_INTERVAL;
+    const tl=tk+TELEGRAPH_MS;
+    const te=tl+TRAVEL_MS;
+    let state,progress=0;
+    if(t<tk)state='pre';
+    else if(t<tl){state='tele';progress=(t-tk)/TELEGRAPH_MS;}
+    else if(t<te){state='travel';progress=(t-tl)/TRAVEL_MS;curWave=`${k+1}`;}
+    else state='done';
+    setWaveVisual(k,state,progress);
+    // 当たり判定
+    if(state==='travel'&&!rt.waveHitFlags[k]){
+      const lanes=PATTERNS[w.pat];
+      const l=toLocal(rt.player,w.dir);
+      const active=Math.min(EXA_STEPS-1,Math.floor(Math.min(progress,0.999)*EXA_STEPS));
+      const cy=exaStepY(active);
+      for(const lane of lanes){
+        if(Math.abs(l.x-laneX(lane))<=LANE_W/2 && Math.abs(l.y-cy)<=EXA_R){
+          rt.waveHitFlags[k]=true;
+          rt.hits++;
+          document.getElementById('rtHits').textContent=rt.hits;
+          log(`${k+1}回目 ✘ 被弾！`,'ng');
+          const f=document.getElementById('hitFlash');
+          f.classList.add('show');
+          setTimeout(()=>f.classList.remove('show'),80);
+          break;
+        }
+      }
+    }
+  });
+  document.getElementById('rtWave').textContent=`${curWave}/6`;
+
+  // 終了判定
+  const endT=COUNT_MS+(waves.length-1)*WAVE_INTERVAL+TELEGRAPH_MS+TRAVEL_MS+500;
+  if(t>endT&&!rt.finished){
+    rt.finished=true;
+    rtStop();
+    waves.forEach((w,k)=>setWaveVisual(k,'done'));
+    if(rt.hits===0)log('🎉 ノーダメージクリア！','ok');
+    else log(`終了：被弾 ${rt.hits} 回`,'sys');
+    if(!oneByOne){
+      rt.autoTimer=setTimeout(()=>{
+        rt.autoTimer=null;
+        if(mode==='rt'&&!oneByOne&&!rt.running)rtNewProblem();
+      },3000);
+    }
+  }
+}
+
+// ================= 入力 =================
+svg.addEventListener('pointerdown',e=>{
+  const pt=evtToWorld(e);
+  if(mode==='quiz'){ quizClick(pt); return; }
+  rt.target=pt;
+  svg.setPointerCapture(e.pointerId);
+});
+svg.addEventListener('pointermove',e=>{
+  if(mode!=='rt'||!rt.running)return;
+  if(e.buttons>0||e.pointerType==='touch'){
+    rt.target=evtToWorld(e);
+  }
+});
+
+// 初期化
+commitProblem(genWaves());
+buildWaveEls();
+updateFlowButtons();
+updateRotButtons();
+updateSpeedDisplay();
+setMode(mode);
+log('モードを選んで開始してください','sys');
+</script>
+  <!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "69e65a6b5ec64e5bb4b6a6c1c07c4667"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>
